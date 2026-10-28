@@ -1792,7 +1792,13 @@ With \`alexandria\` in place of \`url\`, the tool runs catalogued provider capab
     description: `
 Enumerate URLs indexed under one website through Firecrawl without fetching each page's content. Use this when the request asks for a site's URL inventory, when several relevant pages must be located, or when the desired page URL is unknown. An optional \`search\` term narrows the URL list, while sitemap, subdomain, query-parameter, and result-limit options control coverage.
 
-Returns matching URLs rather than page bodies. Retrieve one page with \`firecrawl_scrape\`; collect content across multiple pages with \`firecrawl_crawl\`. Authenticated responses can include an \`id\` for optional map feedback.
+Returns matching URLs rather than page bodies. Retrieve one page with \`firecrawl_scrape\`; collect content across multiple pages with \`firecrawl_crawl\`. Authenticated responses can include an \`id\` for optional map feedback.${
+      config.apiUrl && new URL(config.apiUrl).hostname !== 'api.firecrawl.dev'
+        ? `
+
+Self-hosted note: \`search\` only reorders the URLs by how well each URL text matches the term; it does not remove any. To find pages about a topic, request a larger \`limit\` and choose from the returned list. An empty or very short result can come from a failed sitemap fetch, so retry once before concluding the site has no URLs.`
+        : ''
+    }
 `,
     outputSchema: mapOutputSchema,
     parameters: z.object({
