@@ -1863,7 +1863,11 @@ For a programming question, add \`categories: ["developer"]\`; its hits return i
       const requestedSources = normalizeSearchSources(
         Array.isArray(opts.sources) && opts.sources.length ? opts.sources : ['web']
       ) as unknown[];
+      // Alexandria, domainTools and toolDetail exist only on the Firecrawl
+      // cloud; a self-hosted /v2/search rejects them as unrecognized keys.
+      const selfHosted = resolveApiBaseUrl() !== DEFAULT_CLOUD_API_URL;
       const addsAlexandria =
+        !selfHosted &&
         hasCredential(session) &&
         enterpriseAllowsAlexandria(opts.enterprise) &&
         !hasAlexandria(requestedSources);
@@ -1871,8 +1875,10 @@ For a programming question, add \`categories: ["developer"]\`; its hits return i
         ...opts,
         sources: addsAlexandria ? withAlexandriaSource(requestedSources) : requestedSources,
       } as Record<string, unknown>;
-      searchOpts.domainTools ??= defaultDomainTools(searchOpts.sources);
-      searchOpts.toolDetail ??= 'compact';
+      if (!selfHosted) {
+        searchOpts.domainTools ??= defaultDomainTools(searchOpts.sources);
+        searchOpts.toolDetail ??= 'compact';
+      }
 
       if (searchOpts.scrapeOptions) {
         searchOpts.scrapeOptions = withReadOnlyProfile(

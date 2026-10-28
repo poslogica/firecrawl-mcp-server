@@ -39,6 +39,22 @@ export type ServiceSettings = {
   apiUrl?: string;
 };
 
+/**
+ * Tools that need the Firecrawl cloud (agent backend, Supabase, billing,
+ * Alexandria, paper and code indexes). A self-hosted API cannot serve them,
+ * so they are not registered unless FIRECRAWL_SELF_HOSTED_ALL_TOOLS is set.
+ */
+const SELF_HOSTED_UNSUPPORTED_TOOL = /^firecrawl_(agent|agent_status|interact|interact_stop|credit_usage|feedback|search_feedback|find_tools|gov_search|developer_search|monitor_.+|research_.+)$/;
+
+function isSelfHostedApiUrl(apiUrl: string | undefined): boolean {
+  if (!apiUrl) return false;
+  try {
+    return new URL(apiUrl).hostname !== 'api.firecrawl.dev';
+  } catch {
+    return false;
+  }
+}
+
 /** Hooks that give one server instance the behaviour of a service profile. */
 export function createServiceHooks(
   profile: ServerProfile,
@@ -59,6 +75,14 @@ export function createServiceHooks(
         }
       : {}),
   };
+
+  if (
+    !searchSurface &&
+    isSelfHostedApiUrl(settings.apiUrl) &&
+    !process.env.FIRECRAWL_SELF_HOSTED_ALL_TOOLS
+  ) {
+    hooks.toolFilter = (name) => !SELF_HOSTED_UNSUPPORTED_TOOL.test(name);
+  }
 
   if (settings.transport === 'httpStream') {
     hooks.authenticate = createServiceAuthenticate(profile, settings);
